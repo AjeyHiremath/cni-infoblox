@@ -91,6 +91,7 @@ effect when the same setting have not been specified in the network configuratio
 	Infoblox WAPI Password (default "")
 --wapi-version string
 	Infoblox WAPI Version (default "2.3")
+
 --ssl-verify string
 	Specifies whether (true/false) to verify server certificate. If a file path is specified, it is assumed to be a certificate file and will be used to verify server certificate. (default "false")
 
@@ -108,7 +109,7 @@ effect when the same setting have not been specified in the network configuratio
 --prefix-length integer
 	The CIDR prefix length when allocating a subnet from Network Container (default 24)
 ```
-NOTE:WAPI Version should be above 2.3
+NOTE:WAPI Version should be 2.3 or above
 
 It is recommended that the Infoblox IPAM Daemon be run as a container. A docker image is availabe in Docker Hub
 (infoblox/infoblox-cni-daemon). A skeleton shell script (run-rkt-daemon.sh) to run the docker image using rkt is
@@ -142,3 +143,7 @@ rkt run --interactive --net=net-1 quay.io/fermayo/ubuntu
 
 When the container comes up, verify using the "ifconfig" command that IP has been successfully provisioned
 from Infoblox.
+
+Note
+-----
+This plugin supports CNI version 0.5.2 https://github.com/containernetworking/cni/tree/v0.5.2
