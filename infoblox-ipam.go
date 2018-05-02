@@ -16,7 +16,7 @@
 package ibcni
 
 import (
-	"errors"
+	//"errors"
 	"fmt"
 	"log"
 	"net"
@@ -27,7 +27,7 @@ import (
 
 type Container struct {
 	NetworkContainer string // CIDR of Network Container
-	NetworkView string // Network view
+	NetworkView      string // Network view
 	ContainerObj     *ibclient.NetworkContainer
 	exhausted        bool
 }
@@ -39,7 +39,7 @@ type IBInfobloxDriver interface {
 	UpdateAddress(fixedAddrRef string, macAddr string, name string, vmID string) (*ibclient.FixedAddress, error)
 	ReleaseAddress(netviewName string, ipAddr string, macAddr string) (ref string, err error)
 	RequestNetwork(netconf NetConfig, netviewName string) (network string, err error)
-	CreateGateway(cidr string,gw net.IP,netviewName string)(string,error)
+	CreateGateway(cidr string, gw net.IP, netviewName string) (string, error)
 }
 
 type InfobloxDriver struct {
@@ -48,6 +48,7 @@ type InfobloxDriver struct {
 
 	DefaultNetworkView string
 	DefaultPrefixLen   uint
+	Network            string
 }
 
 func (ibDrv *InfobloxDriver) RequestNetworkView(netviewName string) (string, error) {
@@ -115,24 +116,24 @@ func (ibDrv *InfobloxDriver) ReleaseAddress(netviewName string, ipAddr string, m
 	return
 }
 
-func (ibDrv *InfobloxDriver) createNetworkContainer(netview string, pool string) (*ibclient.NetworkContainer, error) {
-	container, err := ibDrv.objMgr.GetNetworkContainer(netview, pool)
-	if container == nil {
-		container, err = ibDrv.objMgr.CreateNetworkContainer(netview, pool)
-	}
+//func (ibDrv *InfobloxDriver) createNetworkContainer(netview string, pool string) (*ibclient.NetworkContainer, error) {
+//	container, err := ibDrv.objMgr.GetNetworkContainer(netview, pool)
+//	if container == nil {
+//		container, err = ibDrv.objMgr.CreateNetworkContainer(netview, pool)
+//	}
 
-	return container, err
-}
+//	return container, err
+//}
 
-func (ibDrv *InfobloxDriver) nextAvailableContainer() *Container {
-	for i := range ibDrv.Containers {
-		if !ibDrv.Containers[i].exhausted {
-			return &ibDrv.Containers[i]
-		}
-	}
+//func (ibDrv *InfobloxDriver) nextAvailableContainer() *Container {
+//	for i := range ibDrv.Containers {
+//		if !ibDrv.Containers[i].exhausted {
+//			return &ibDrv.Containers[i]
+//		}
+//	}
 
-	return nil
-}
+//	return nil
+//}
 
 func (ibDrv *InfobloxDriver) resetContainers() {
 	for i := range ibDrv.Containers {
@@ -142,46 +143,46 @@ func (ibDrv *InfobloxDriver) resetContainers() {
 	}
 }
 
-func (ibDrv *InfobloxDriver) allocateNetworkHelper(netview string, prefixLen uint, name string) (network *ibclient.Network, err error) {
-	log.Printf("allocateNetworkHelper: netview='%s', prefixLen='%d', name='%s'", netview, prefixLen, name)
-	container := ibDrv.nextAvailableContainer()
-	for container != nil {
-		log.Printf("Allocating network from Container:'%s'", container.NetworkContainer)
-		if container.ContainerObj == nil || container.NetworkView != netview {
-			var err error
-			container.ContainerObj, err = ibDrv.createNetworkContainer(netview, container.NetworkContainer)
-			container.NetworkView = netview
-			if err != nil || container.ContainerObj == nil {
-				return nil, err
-			}
-		}
-		network, err = ibDrv.objMgr.AllocateNetwork(netview, container.NetworkContainer, prefixLen, name)
-		if network != nil {
-			break
-		}
-		container.exhausted = true
-		container = ibDrv.nextAvailableContainer()
-	}
+//func (ibDrv *InfobloxDriver) allocateNetworkHelper(netview string, prefixLen uint, name string) (network *ibclient.Network, err error) {
+//	log.Printf("allocateNetworkHelper: netview='%s', prefixLen='%d', name='%s'", netview, prefixLen, name)
+//	container := ibDrv.nextAvailableContainer()
+//	for container != nil {
+//		log.Printf("Allocating network from Container:'%s'", container.NetworkContainer)
+//		if container.ContainerObj == nil || container.NetworkView != netview {
+//			var err error
+//			container.ContainerObj, err = ibDrv.createNetworkContainer(netview, container.NetworkContainer)
+//			container.NetworkView = netview
+//			if err != nil || container.ContainerObj == nil {
+//				return nil, err
+//			}
+//		}
+//		network, err = ibDrv.objMgr.AllocateNetwork(netview, container.NetworkContainer, prefixLen, name)
+//		if network != nil {
+//			break
+//		}
+//		container.exhausted = true
+//		container = ibDrv.nextAvailableContainer()
+//	}
 
-	return network, nil
-}
+//	return network, nil
+//}
 
-func (ibDrv *InfobloxDriver) allocateNetwork(prefixLen uint, name string, netviewName string) (network *ibclient.Network, err error) {
-	log.Printf("allocateNetwork: prefixLen='%d', name='%s'", prefixLen, name)
-	if prefixLen == 0 {
-		prefixLen = ibDrv.DefaultPrefixLen
-	}
-	network, err = ibDrv.allocateNetworkHelper(netviewName, prefixLen, name)
-	if network == nil {
-		ibDrv.resetContainers()
-		network, err = ibDrv.allocateNetworkHelper(netviewName, prefixLen, name)
-	}
+//func (ibDrv *InfobloxDriver) allocateNetwork(prefixLen uint, name string, netviewName string) (network *ibclient.Network, err error) {
+//	log.Printf("allocateNetwork: prefixLen='%d', name='%s'", prefixLen, name)
+//	if prefixLen == 0 {
+//		prefixLen = ibDrv.DefaultPrefixLen
+//	}
+//	network, err = ibDrv.allocateNetworkHelper(netviewName, prefixLen, name)
+//	if network == nil {
+//		ibDrv.resetContainers()
+//		network, err = ibDrv.allocateNetworkHelper(netviewName, prefixLen, name)
+//	}
 
-	if network == nil {
-		err = errors.New("Cannot allocate network in Address Space")
-	}
-	return
-}
+//	if network == nil {
+//		err = errors.New("Cannot allocate network in Address Space")
+//	}
+//	return
+//}
 
 func (ibDrv *InfobloxDriver) requestSpecificNetwork(netview string, subnet string, name string) (*ibclient.Network, error) {
 	network, err := ibDrv.objMgr.GetNetwork(netview, subnet, nil)
@@ -223,6 +224,13 @@ func (ibDrv *InfobloxDriver) RequestNetwork(netconf NetConfig, netviewName strin
 		cidr = net.IPNet{IP: netconf.IPAM.Subnet.IP, Mask: netconf.IPAM.Subnet.Mask}
 		ibNetwork, err = ibDrv.requestSpecificNetwork(netviewName, cidr.String(), netconf.Name)
 	} else {
+		// With default network
+		defaultCidr := ibDrv.Network
+		log.Println("defaultCidr:..........", defaultCidr)
+		ibNetwork, err = ibDrv.requestSpecificNetwork(netviewName, ibDrv.Network, netconf.Name)
+
+	}
+	/*else {
 		networkByName, err := ibDrv.objMgr.GetNetwork(netviewName, "", ibclient.EA{"Network Name": netconf.Name})
 		if err != nil {
 			return "", err
@@ -237,7 +245,7 @@ func (ibDrv *InfobloxDriver) RequestNetwork(netconf NetConfig, netviewName strin
 			}
 			ibNetwork, err = ibDrv.allocateNetwork(prefixLen, netconf.Name, netviewName)
 		}
-	}
+	}*/
 
 	log.Printf("RequestNetwork: result='%s'", ibNetwork)
 	if ibNetwork != nil {
@@ -246,21 +254,21 @@ func (ibDrv *InfobloxDriver) RequestNetwork(netconf NetConfig, netviewName strin
 	return network, err
 }
 
-func (ibDrv *InfobloxDriver)CreateGateway(cidr string,gw net.IP,netviewName string)(string, error){
+func (ibDrv *InfobloxDriver) CreateGateway(cidr string, gw net.IP, netviewName string) (string, error) {
 
 	gw = gw.To4() //making sure it is only 4 bytes
 	//check for the format of gateway is in 0.0.0.x given by customer
 	//it happens when no subnet given in the conf file
-	if gw[0] ==0{
-		subnetIp,subnet,_:=net.ParseCIDR(cidr)
+	if gw[0] == 0 {
+		subnetIp, subnet, _ := net.ParseCIDR(cidr)
 		subnetIp = subnetIp.To4()
-		for index:=0;index<=3;index++{
-			if gw[index]==0{
-				gw[index]=subnetIp[index]
+		for index := 0; index <= 3; index++ {
+			if gw[index] == 0 {
+				gw[index] = subnetIp[index]
 			}
 		}
-		if subnet.Contains(gw)==false{
-			return "",fmt.Errorf("gateway given is invalid, should lie on subnet:'%s'",subnet)
+		if subnet.Contains(gw) == false {
+			return "", fmt.Errorf("gateway given is invalid, should lie on subnet:'%s'", subnet)
 
 		}
 	}
@@ -275,7 +283,7 @@ func (ibDrv *InfobloxDriver)CreateGateway(cidr string,gw net.IP,netviewName stri
 			log.Printf("Gateway creation failed with error:'%s'", err)
 		}
 	}
-	return fmt.Sprintf("%s", gatewayIp),nil
+	return fmt.Sprintf("%s", gatewayIp), nil
 }
 
 func makeContainers(containerList string) []Container {
@@ -283,17 +291,18 @@ func makeContainers(containerList string) []Container {
 
 	parts := strings.Split(containerList, ",")
 	for _, p := range parts {
-		containers = append(containers, Container{p, "",nil, false})
+		containers = append(containers, Container{p, "", nil, false})
 	}
 
 	return containers
 }
 
-func NewInfobloxDriver(objMgr ibclient.IBObjectManager, networkView string, networkContainer string, prefixLength uint) *InfobloxDriver {
+func NewInfobloxDriver(objMgr ibclient.IBObjectManager, networkView string, networkContainer string, prefixLength uint, network string) *InfobloxDriver {
 	return &InfobloxDriver{
 		objMgr:             objMgr,
 		DefaultNetworkView: networkView,
 		DefaultPrefixLen:   prefixLength,
 		Containers:         makeContainers(networkContainer),
+		Network:            network,
 	}
 }
